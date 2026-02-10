@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+
+# Test
+.vscode-test/
+coverage/
+
+# Packaged extension
+*.vsix
+
+# Misc
+*.log
