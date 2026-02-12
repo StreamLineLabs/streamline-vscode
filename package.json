@@ -1,0 +1,391 @@
+{
+  "name": "streamline-vscode",
+  "displayName": "Streamline for VS Code",
+  "description": "Streamline streaming platform integration for VS Code - topic browser, message preview, and more",
+  "version": "0.2.0",
+  "publisher": "streamlinelabs",
+  "icon": "images/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "galleryBanner": {
+    "color": "#1e1e2e",
+    "theme": "dark"
+  },
+  "keywords": [
+    "streamline",
+    "kafka",
+    "streaming",
+    "messaging",
+    "topics",
+    "event-streaming",
+    "consumer-groups",
+    "schema-registry",
+    "streamql",
+    "real-time"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/streamlinelabs/streamline-vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/streamlinelabs/streamline-vscode/issues"
+  },
+  "homepage": "https://github.com/streamlinelabs/streamline-vscode#readme",
+  "license": "Apache-2.0",
+  "activationEvents": [
+    "onView:streamlineTopics",
+    "onCommand:streamline.connect"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "streamline.connect",
+        "title": "Connect to Server",
+        "category": "Streamline"
+      },
+      {
+        "command": "streamline.disconnect",
+        "title": "Disconnect",
+        "category": "Streamline"
+      },
+      {
+        "command": "streamline.refreshTopics",
+        "title": "Refresh Topics",
+        "category": "Streamline",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "streamline.createTopic",
+        "title": "Create Topic",
+        "category": "Streamline",
+        "icon": "$(add)"
+      },
+      {
+        "command": "streamline.deleteTopic",
+        "title": "Delete Topic",
+        "category": "Streamline"
+      },
+      {
+        "command": "streamline.viewMessages",
+        "title": "View Messages",
+        "category": "Streamline"
+      },
+      {
+        "command": "streamline.produceMessage",
+        "title": "Produce Message",
+        "category": "Streamline"
+      },
+      {
+        "command": "streamline.viewConsumerGroups",
+        "title": "View Consumer Groups",
+        "category": "Streamline"
+      },
+      {
+        "command": "streamline.refreshSchemas",
+        "title": "Refresh Schemas",
+        "category": "Streamline",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "streamline.registerSchema",
+        "title": "Register Schema",
+        "category": "Streamline",
+        "icon": "$(add)"
+      },
+      {
+        "command": "streamline.viewSchemaVersion",
+        "title": "View Schema",
+        "category": "Streamline"
+      },
+      {
+        "command": "streamline.deleteSubject",
+        "title": "Delete Subject",
+        "category": "Streamline"
+      },
+      {
+        "command": "streamline.checkCompatibility",
+        "title": "Check Compatibility",
+        "category": "Streamline"
+      },
+      {
+        "command": "streamline.setCompatibility",
+        "title": "Set Compatibility Level",
+        "category": "Streamline"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "streamline",
+          "title": "Streamline",
+          "icon": "images/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "streamline": [
+        {
+          "id": "streamlineTopics",
+          "name": "Topics"
+        },
+        {
+          "id": "streamlineConsumerGroups",
+          "name": "Consumer Groups"
+        },
+        {
+          "id": "streamlineSchemas",
+          "name": "Schema Registry"
+        },
+        {
+          "id": "streamlineConnections",
+          "name": "Connections"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "streamline.refreshTopics",
+          "when": "view == streamlineTopics",
+          "group": "navigation"
+        },
+        {
+          "command": "streamline.createTopic",
+          "when": "view == streamlineTopics",
+          "group": "navigation"
+        },
+        {
+          "command": "streamline.refreshSchemas",
+          "when": "view == streamlineSchemas",
+          "group": "navigation"
+        },
+        {
+          "command": "streamline.registerSchema",
+          "when": "view == streamlineSchemas",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "streamline.viewMessages",
+          "when": "view == streamlineTopics && viewItem == topic"
+        },
+        {
+          "command": "streamline.produceMessage",
+          "when": "view == streamlineTopics && viewItem == topic"
+        },
+        {
+          "command": "streamline.deleteTopic",
+          "when": "view == streamlineTopics && viewItem == topic"
+        },
+        {
+          "command": "streamline.viewSchemaVersion",
+          "when": "view == streamlineSchemas && viewItem == version"
+        },
+        {
+          "command": "streamline.checkCompatibility",
+          "when": "view == streamlineSchemas && viewItem == subject"
+        },
+        {
+          "command": "streamline.setCompatibility",
+          "when": "view == streamlineSchemas && viewItem == subject"
+        },
+        {
+          "command": "streamline.deleteSubject",
+          "when": "view == streamlineSchemas && viewItem == subject"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Streamline",
+      "properties": {
+        "streamline.serverAddress": {
+          "type": "string",
+          "default": "localhost:9092",
+          "description": "Default Streamline Kafka protocol address (host:port)"
+        },
+        "streamline.httpAddress": {
+          "type": "string",
+          "default": "localhost:9094",
+          "description": "Default Streamline HTTP API address (host:port)"
+        },
+        "streamline.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh tree views on a timer"
+        },
+        "streamline.refreshInterval": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "description": "Auto-refresh interval in milliseconds"
+        },
+        "streamline.maxMessages": {
+          "type": "number",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Maximum number of messages to display in message viewer"
+        },
+        "streamline.theme": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["dark", "light", "auto"],
+          "enumDescriptions": [
+            "Always use dark theme for message viewer",
+            "Always use light theme for message viewer",
+            "Follow VS Code theme"
+          ],
+          "description": "Theme for Streamline webview panels"
+        },
+        "streamline.connections": {
+          "type": "array",
+          "default": [],
+          "description": "Saved Streamline server connections (multiple profiles)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Connection profile name"
+              },
+              "host": {
+                "type": "string",
+                "description": "Server host"
+              },
+              "port": {
+                "type": "number",
+                "description": "Kafka protocol port"
+              },
+              "httpPort": {
+                "type": "number",
+                "description": "HTTP API port"
+              },
+              "tls": {
+                "type": "boolean",
+                "description": "Enable TLS for this connection",
+                "default": false
+              },
+              "tlsCaCert": {
+                "type": "string",
+                "description": "Path to CA certificate file for TLS"
+              },
+              "tlsClientCert": {
+                "type": "string",
+                "description": "Path to client certificate file for mutual TLS"
+              },
+              "tlsClientKey": {
+                "type": "string",
+                "description": "Path to client key file for mutual TLS"
+              },
+              "tlsInsecure": {
+                "type": "boolean",
+                "description": "Skip TLS certificate verification (not recommended for production)",
+                "default": false
+              }
+            },
+            "required": ["name", "host"]
+          }
+        },
+        "streamline.defaultConnection": {
+          "type": "string",
+          "default": "",
+          "description": "Default connection profile name to use on startup"
+        },
+        "streamline.autoReconnect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically reconnect when connection is lost"
+        },
+        "streamline.autoReconnectInterval": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "description": "Interval in milliseconds between auto-reconnect attempts"
+        },
+        "streamline.maxMessagesToShow": {
+          "type": "number",
+          "default": 100,
+          "description": "Maximum number of messages to show in message viewer (deprecated, use streamline.maxMessages)",
+          "deprecationMessage": "Use streamline.maxMessages instead"
+        },
+        "streamline.autoRefreshInterval": {
+          "type": "number",
+          "default": 5000,
+          "description": "Auto-refresh interval in milliseconds (deprecated, use streamline.refreshInterval)",
+          "deprecationMessage": "Use streamline.refreshInterval instead"
+        },
+        "streamline.produceMessageSchema": {
+          "type": "object",
+          "default": null,
+          "description": "JSON Schema to validate messages before producing. Set to null to disable validation.",
+          "markdownDescription": "JSON Schema to validate messages before producing. Example:\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\"id\", \"event\"],\n  \"properties\": {\n    \"id\": { \"type\": \"string\" },\n    \"event\": { \"type\": \"string\" }\n  }\n}\n```"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "streamline.connect",
+        "key": "ctrl+shift+s",
+        "mac": "cmd+shift+s"
+      },
+      {
+        "command": "streamline.refreshTopics",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r"
+      },
+      {
+        "command": "streamline.createTopic",
+        "key": "ctrl+shift+n",
+        "mac": "cmd+shift+n"
+      }
+    ],
+    "languages": [
+      {
+        "id": "streamql",
+        "aliases": ["StreamQL", "streamql"],
+        "extensions": [".sql.streamline", ".streamql"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "streamql",
+        "scopeName": "source.streamql",
+        "path": "./syntaxes/streamql.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.10.0",
+    "@types/sinon": "^17.0.3",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.55.0",
+    "mocha": "^10.2.0",
+    "sinon": "^17.0.1",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
