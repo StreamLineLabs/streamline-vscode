@@ -1,0 +1,83 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "StreamQL",
+  "scopeName": "source.streamql",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#functions" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-dash.streamql",
+          "match": "--.*$"
+        },
+        {
+          "name": "comment.block.streamql",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.streamql",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.streamql",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.streamql",
+          "match": "\\b\\d+(\\.\\d+)?\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.streamql",
+          "match": "(?i)\\b(SELECT|FROM|WHERE|GROUP BY|HAVING|ORDER BY|LIMIT|OFFSET|JOIN|LEFT JOIN|RIGHT JOIN|INNER JOIN|ON|AS|AND|OR|NOT|IN|BETWEEN|LIKE|IS|NULL|TRUE|FALSE|CASE|WHEN|THEN|ELSE|END|INSERT|INTO|VALUES|CREATE|STREAM|TABLE|TOPIC|WITH|EMIT|CHANGES|WINDOW|TUMBLING|HOPPING|SESSION|WITHIN)\\b"
+        },
+        {
+          "name": "keyword.other.streamql",
+          "match": "(?i)\\b(PARTITION BY|PARTITIONS|REPLICATION|RETENTION|FORMAT|KEY|VALUE|TIMESTAMP|WATERMARK|INTERVAL|SECONDS|MINUTES|HOURS|DAYS)\\b"
+        },
+        {
+          "name": "storage.type.streamql",
+          "match": "(?i)\\b(STRING|INT|INTEGER|BIGINT|DOUBLE|FLOAT|BOOLEAN|BYTES|ARRAY|MAP|STRUCT|DECIMAL|DATE|TIME|TIMESTAMP)\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "entity.name.function.streamql",
+          "match": "(?i)\\b(COUNT|SUM|AVG|MIN|MAX|COLLECT_LIST|COLLECT_SET|TOPK|TOPKDISTINCT|LATEST_BY_OFFSET|EARLIEST_BY_OFFSET|CONCAT|SUBSTRING|TRIM|UPPER|LOWER|LEN|CAST|COALESCE|IFNULL|NULLIF|ABS|CEIL|FLOOR|ROUND|ROWTIME|ROWKEY|ROWOFFSET|ROWPARTITION)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.streamql",
+          "match": "(=|!=|<>|<|>|<=|>=|\\+|-|\\*|/|%|\\|\\|)"
+        }
+      ]
+    }
+  }
+}
