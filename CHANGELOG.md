@@ -1,6 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+- test: add snapshot tests for serialization (2026-02-20)
 - perf: reduce bundle size with tree-shaking config (2026-02-20)
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
