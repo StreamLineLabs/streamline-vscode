@@ -1,6 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+- refactor: extract connection manager from extension host (2026-02-21)
 - fix: resolve tree view refresh on topic creation (2026-02-21)
 - feat: add syntax highlighting for topic configuration (2026-02-21)
 - feat: add search functionality to documentation (2026-02-21)
