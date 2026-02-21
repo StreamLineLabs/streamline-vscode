@@ -1,6 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+- fix: resolve tree view refresh on topic creation (2026-02-21)
 - feat: add syntax highlighting for topic configuration (2026-02-21)
 - feat: add search functionality to documentation (2026-02-21)
 - test: add snapshot tests for serialization (2026-02-20)
