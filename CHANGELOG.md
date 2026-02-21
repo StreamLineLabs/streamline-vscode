@@ -1,6 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+- feat: add search functionality to documentation (2026-02-21)
 - test: add snapshot tests for serialization (2026-02-20)
 - perf: reduce bundle size with tree-shaking config (2026-02-20)
 
