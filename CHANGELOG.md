@@ -1,6 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+- fix: handle workspace folder detection edge case (2026-02-22)
 - test: add unit tests for command palette actions (2026-02-22)
 - refactor: extract connection manager from extension host (2026-02-21)
 - fix: resolve tree view refresh on topic creation (2026-02-21)
