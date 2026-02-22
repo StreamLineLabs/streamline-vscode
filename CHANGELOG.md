@@ -1,21 +1,26 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-- style: normalize status bar indicator colors (2026-02-22)
-- chore: update vscode engine version constraint (2026-02-22)
-- fix: handle workspace folder detection edge case (2026-02-22)
-- test: add unit tests for command palette actions (2026-02-22)
-- refactor: extract connection manager from extension host (2026-02-21)
-- fix: resolve tree view refresh on topic creation (2026-02-21)
-- feat: add syntax highlighting for topic configuration (2026-02-21)
-- feat: add search functionality to documentation (2026-02-21)
-- test: add snapshot tests for serialization (2026-02-20)
-- perf: reduce bundle size with tree-shaking config (2026-02-20)
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
+- Syntax highlighting for topic configuration
+- Search functionality for documentation
+
+### Fixed
+- Handle workspace folder detection edge case
+- Resolve tree view refresh on topic creation
+
+### Changed
+- Update VS Code engine version constraint
+- Extract connection manager from extension host
+
+### Performance
+- Reduce bundle size with tree-shaking config
 
 ### Added
 - Marketplace metadata: galleryBanner, bugs/homepage URLs, expanded keywords
