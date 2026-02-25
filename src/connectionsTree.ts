@@ -127,3 +127,5 @@ export class ConnectionsTreeProvider implements vscode.TreeDataProvider<Connecti
         this.refresh();
     }
 }
+
+// add syntax highlighting for StreamQL queries
