@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- **Fixed**: correct keybinding conflict with core shortcuts
 - **Added**: implement code completion for topic names
 - **Changed**: update extension icon and marketplace banner
 - **Testing**: add unit tests for configuration parser
