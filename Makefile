@@ -25,3 +25,4 @@ package: compile ## Package as VSIX
 
 watch: ## Watch mode for development
 	npm run watch
+# update vscode engine compatibility range
