@@ -117,6 +117,30 @@
         "command": "streamline.setCompatibility",
         "title": "Set Compatibility Level",
         "category": "Streamline"
+      },
+      {
+        "command": "streamline.viewTopology",
+        "title": "View Cluster Topology",
+        "category": "Streamline",
+        "icon": "$(symbol-structure)"
+      },
+      {
+        "command": "streamline.traceMessage",
+        "title": "Trace Message",
+        "category": "Streamline",
+        "icon": "$(search)"
+      },
+      {
+        "command": "streamline.viewLagDashboard",
+        "title": "View Consumer Lag Dashboard",
+        "category": "Streamline",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "streamline.viewPartitionHotspots",
+        "title": "View Partition Hotspots",
+        "category": "Streamline",
+        "icon": "$(flame)"
       }
     ],
     "viewsContainers": {
