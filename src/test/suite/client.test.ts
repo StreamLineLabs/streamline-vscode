@@ -42,3 +42,4 @@ suite('StreamlineClient Unit Tests', () => {
         }
     });
 });
+// extract command handlers into modules
