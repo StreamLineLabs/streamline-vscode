@@ -110,3 +110,4 @@ suite('Tree View Providers', () => {
         });
     });
 });
+// TODO: add integration tests for language server
