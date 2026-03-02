@@ -62,3 +62,4 @@ suite('Extension Activation', () => {
         assert.strictEqual(config.get('defaultConnection'), '');
     });
 });
+
