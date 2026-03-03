@@ -372,3 +372,4 @@ export interface CompatibilityResult {
     is_compatible: boolean;
     messages?: string[];
 }
+
