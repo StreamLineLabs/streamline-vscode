@@ -145,3 +145,4 @@ export class ConsumerGroupsTreeProvider implements vscode.TreeDataProvider<Consu
         return null;
     }
 }
+
