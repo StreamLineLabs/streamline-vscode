@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 - feat: add topic message preview panel (2026-03-06)
+
+- style: update tree view icons for dark theme (2026-03-06)
 ## [Unreleased]
 
 - feat: add syntax highlighting for StreamQL queries
