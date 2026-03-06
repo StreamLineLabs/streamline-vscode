@@ -38,6 +38,7 @@
   "homepage": "https://github.com/streamlinelabs/streamline-vscode#readme",
   "license": "Apache-2.0",
   "activationEvents": [
+    "onStartupFinished",
     "onView:streamlineTopics",
     "onCommand:streamline.connect"
   ],
@@ -410,7 +411,7 @@
     "@vscode/vsce": "^2.22.0"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.7.9"
   }
 }
 

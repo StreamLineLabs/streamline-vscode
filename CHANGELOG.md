@@ -6,14 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-- feat: add topic message preview panel (2026-03-06)
-
-- style: update tree view icons for dark theme (2026-03-06)
 ## [Unreleased]
 
+- feat: add topic message preview panel (2026-03-06)
+- style: update tree view icons for dark theme (2026-03-06)
 - feat: add syntax highlighting for StreamQL queries
-
-## [0.2.0] - 2026-02-28
 - **Changed**: update webpack bundler configuration
 - **Documentation**: add feature walkthrough for new users
 - **Fixed**: correct keybinding conflict with core shortcuts
@@ -54,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Connection status bar tooltip with connection details
 - Deprecated `maxMessagesToShow` and `autoRefreshInterval` in favor of `maxMessages` and `refreshInterval`
 
+
 ## [0.2.0] - 2026-02-18
 
 ### Added
@@ -64,4 +62,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Topic creation and deletion from sidebar
 - Message production from editor
 - CI pipeline with tests
-
