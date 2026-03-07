@@ -11,6 +11,7 @@ class ConnectionItem extends vscode.TreeItem {
     constructor(
         public readonly connection: ConnectionConfig,
         public readonly isActive: boolean
+
     ) {
         super(connection.name, vscode.TreeItemCollapsibleState.None);
 
