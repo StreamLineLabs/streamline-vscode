@@ -111,3 +111,13 @@ export class TopicsTreeProvider implements vscode.TreeDataProvider<TopicItem> {
         return null;
     }
 }
+
+
+/**
+ * Formats a partition offset for display, handling special values.
+ */
+function formatOffset(offset: number): string {
+    if (offset === -1) return 'latest';
+    if (offset === -2) return 'earliest';
+    return offset.toLocaleString();
+}
