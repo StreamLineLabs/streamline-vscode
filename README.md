@@ -180,3 +180,24 @@ Apache 2.0
 
 
 
+
+
+## API Reference
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `Streamline: Connect` | Connect to a Streamline cluster |
+| `Streamline: Disconnect` | Disconnect from current cluster |
+| `Streamline: Refresh Topics` | Refresh the topic tree view |
+| `Streamline: Produce Message` | Send a message to a topic |
+| `Streamline: Browse Messages` | Browse messages in a topic |
+
+### Settings
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `streamline.brokers` | Broker addresses | `localhost:9092` |
+| `streamline.autoRefresh` | Auto-refresh interval (ms) | `5000` |
+| `streamline.maxMessages` | Max messages to display | `100` |
