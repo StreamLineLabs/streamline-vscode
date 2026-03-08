@@ -43,3 +43,22 @@ suite('StreamlineClient Unit Tests', () => {
     });
 });
 // extract command handlers into modules
+
+
+suite('Connection String Parsing', () => {
+    test('should parse single broker', () => {
+        const result = parseBrokers('localhost:9092');
+        assert.deepStrictEqual(result, [{ host: 'localhost', port: 9092 }]);
+    });
+
+    test('should parse multiple brokers', () => {
+        const result = parseBrokers('broker1:9092,broker2:9092');
+        assert.strictEqual(result.length, 2);
+    });
+
+    test('should handle whitespace in broker list', () => {
+        const result = parseBrokers(' broker1:9092 , broker2:9092 ');
+        assert.strictEqual(result.length, 2);
+        assert.strictEqual(result[0].host, 'broker1');
+    });
+});
