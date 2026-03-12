@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { StreamlineClient } from '../../client';
+import { StreamlineClient, parseBrokers } from '../../client';
 
 suite('StreamlineClient Unit Tests', () => {
     test('Constructor sets host and port', () => {

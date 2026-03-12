@@ -373,3 +373,31 @@ export interface CompatibilityResult {
     messages?: string[];
 }
 
+/** Parsed broker address. */
+export interface BrokerAddress {
+    host: string;
+    port: number;
+}
+
+/**
+ * Parse a comma-separated broker connection string into structured addresses.
+ *
+ * @param connectionString Broker list, e.g. "broker1:9092,broker2:9092"
+ * @returns Parsed broker addresses
+ */
+export function parseBrokers(connectionString: string): BrokerAddress[] {
+    return connectionString
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+        .map(broker => {
+            const lastColon = broker.lastIndexOf(':');
+            if (lastColon === -1) {
+                return { host: broker, port: 9092 };
+            }
+            const host = broker.substring(0, lastColon);
+            const port = parseInt(broker.substring(lastColon + 1), 10);
+            return { host, port: isNaN(port) ? 9092 : port };
+        });
+}
+
