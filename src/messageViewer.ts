@@ -336,7 +336,7 @@ export class MessageViewerPanel {
                 try {
                     const parsed = JSON.parse(m.value);
                     valueDisplay = JSON.stringify(parsed, null, 2);
-                } catch {}
+                } catch { /* value is not valid JSON — display as-is */ }
 
                 lastOffset = Math.max(lastOffset, m.offset + 1);
 
