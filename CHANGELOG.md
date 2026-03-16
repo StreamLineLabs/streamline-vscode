@@ -66,3 +66,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI pipeline with tests
 - fix: resolve theme color variable precedence in webview
 - feat: add topic list refresh command with debounce
+- chore: update vscode engine minimum version constraint
