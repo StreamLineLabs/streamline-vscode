@@ -64,3 +64,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Topic creation and deletion from sidebar
 - Message production from editor
 - CI pipeline with tests
+- fix: resolve theme color variable precedence in webview
