@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (Moonshot)
+- **Moonshot Branches** read-only tree view in the Streamline activity bar.
+  Lists branches reported by the configured Moonshot HTTP API (M5 time-travel).
+  Read-only by design: branch creation/merge/delete remain admin operations
+  that should be performed via the SDKs / Terraform / `kubectl`, not from the
+  editor.
+- New configuration keys:
+  - `streamline.moonshotUrl` — Moonshot HTTP API base URL (e.g. `http://localhost:9094`).
+  - `streamline.moonshotToken` — optional bearer token.
+- New command: `streamline.refreshBranches` (refresh icon in the view title).
+- The view re-resolves its client automatically when the moonshot config keys
+  change (`onDidChangeConfiguration`).
+- New file `src/branchesTree.ts` with `BranchesTreeProvider`,
+  `HttpBranchesClient` (injectable `fetch` for tests), and a hint when no URL
+  is configured.
+- 8 new unit tests (`src/test/suite/branchesTree.test.ts`) covering: empty
+  state, listing, error surfacing, refresh event, leaf children, and the
+  `HttpBranchesClient` URL/auth/error paths via a stub `fetch`.
+- `npm run compile` passes; `vsce package` would include the new view.
+
 - feat: add topic message preview panel (2026-03-06)
 - style: update tree view icons for dark theme (2026-03-06)
 - feat: add syntax highlighting for StreamQL queries

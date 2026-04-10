@@ -3,6 +3,7 @@
 [![CI](https://github.com/streamlinelabs/streamline-vscode/actions/workflows/ci.yml/badge.svg)](https://github.com/streamlinelabs/streamline-vscode/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![VS Code](https://img.shields.io/badge/VS_Code-Extension-007ACC.svg)](https://marketplace.visualstudio.com/)
+[![Release](https://img.shields.io/github/v/release/streamlinelabs/streamline-vscode?label=release)](https://github.com/streamlinelabs/streamline-vscode/releases)
 
 Official VS Code extension for Streamline streaming platform.
 

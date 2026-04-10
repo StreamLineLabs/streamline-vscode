@@ -1,21 +1,41 @@
 import * as vscode from 'vscode';
 import { StreamlineClient, TopicInfo, PartitionInfo } from './client';
 
+/** Additional topic metadata fetched from the HTTP API. */
+export interface TopicMeta {
+    semanticEmbed?: boolean;
+    hasContract?: boolean;
+    contractName?: string;
+}
+
 export class TopicItem extends vscode.TreeItem {
+    public topicMeta?: TopicMeta;
+
     constructor(
         public readonly label: string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         public readonly topic?: TopicInfo,
-        public readonly partition?: PartitionInfo
+        public readonly partition?: PartitionInfo,
+        topicMeta?: TopicMeta,
     ) {
         super(label, collapsibleState);
+        this.topicMeta = topicMeta;
 
         if (topic && !partition) {
             // Topic item
             this.contextValue = 'topic';
-            this.description = `${topic.partitions} partition${topic.partitions !== 1 ? 's' : ''}`;
-            this.iconPath = new vscode.ThemeIcon('folder');
-            this.tooltip = `Topic: ${topic.name}\nPartitions: ${topic.partitions}\nReplication: ${topic.replicationFactor}`;
+            const badges: string[] = [];
+            if (topicMeta?.semanticEmbed) { badges.push('🧠'); }
+            if (topicMeta?.hasContract) { badges.push('📜'); }
+            const badgeStr = badges.length > 0 ? ` ${badges.join(' ')}` : '';
+            this.description = `${topic.partitions} partition${topic.partitions !== 1 ? 's' : ''}${badgeStr}`;
+            this.iconPath = new vscode.ThemeIcon(
+                topicMeta?.semanticEmbed ? 'symbol-field' : 'folder'
+            );
+            let tip = `Topic: ${topic.name}\nPartitions: ${topic.partitions}\nReplication: ${topic.replicationFactor}`;
+            if (topicMeta?.semanticEmbed) { tip += '\nSemantic Embed: on'; }
+            if (topicMeta?.hasContract) { tip += `\nContract: ${topicMeta.contractName ?? 'active'}`; }
+            this.tooltip = tip;
         } else if (partition) {
             // Partition item
             this.contextValue = 'partition';
@@ -33,6 +53,7 @@ export class TopicsTreeProvider implements vscode.TreeDataProvider<TopicItem> {
     private client: StreamlineClient | undefined;
     private topics: TopicInfo[] = [];
     private topicDetails: Map<string, PartitionInfo[]> = new Map();
+    private topicMetaCache: Map<string, TopicMeta> = new Map();
 
     constructor() {}
 
@@ -40,7 +61,13 @@ export class TopicsTreeProvider implements vscode.TreeDataProvider<TopicItem> {
         this.client = client;
         this.topics = [];
         this.topicDetails.clear();
+        this.topicMetaCache.clear();
         this.refresh();
+    }
+
+    /** Update metadata cache from topic config. Called externally after connect. */
+    setTopicMeta(topicName: string, meta: TopicMeta): void {
+        this.topicMetaCache.set(topicName, meta);
     }
 
     refresh(): void {
@@ -65,11 +92,32 @@ export class TopicsTreeProvider implements vscode.TreeDataProvider<TopicItem> {
                     return [new TopicItem('No topics found', vscode.TreeItemCollapsibleState.None)];
                 }
 
+                // Attempt to enrich topic metadata from topic config
+                for (const topic of this.topics) {
+                    if (!this.topicMetaCache.has(topic.name)) {
+                        try {
+                            const detail = await this.client.describeTopic(topic.name);
+                            const config = (detail as any).config as Record<string, string> | undefined;
+                            if (config) {
+                                this.topicMetaCache.set(topic.name, {
+                                    semanticEmbed: config['semantic.embed'] === 'on',
+                                    hasContract: !!config['contract.name'],
+                                    contractName: config['contract.name'] || undefined,
+                                });
+                            }
+                        } catch {
+                            // Config may not be available; ignore
+                        }
+                    }
+                }
+
                 return this.topics.map(topic =>
                     new TopicItem(
                         topic.name,
                         vscode.TreeItemCollapsibleState.Collapsed,
-                        topic
+                        topic,
+                        undefined,
+                        this.topicMetaCache.get(topic.name),
                     )
                 );
             } catch (error: any) {

@@ -3,6 +3,8 @@ import { TopicsTreeProvider, TopicItem } from './topicsTree';
 import { ConsumerGroupsTreeProvider } from './consumerGroupsTree';
 import { ConnectionsTreeProvider } from './connectionsTree';
 import { SchemaTreeProvider, SchemaTreeItem, SchemaViewerPanel } from './schemaTree';
+import { BranchesTreeProvider, buildBranchesClientFromConfig } from './branchesTree';
+import { MemoryTreeProvider, MemoryItem, buildMemoryClientFromConfig } from './memoryTree';
 import { StreamlineClient } from './client';
 import { MessageViewerPanel } from './messageViewer';
 
@@ -247,12 +249,145 @@ export function activate(context: vscode.ExtensionContext) {
     const consumerGroupsProvider = new ConsumerGroupsTreeProvider();
     const connectionsProvider = new ConnectionsTreeProvider();
     const schemaProvider = new SchemaTreeProvider();
+    const branchesProvider = new BranchesTreeProvider();
+    branchesProvider.setClient(buildBranchesClientFromConfig(vscode.workspace.getConfiguration('streamline')));
+    const memoryProvider = new MemoryTreeProvider();
+    memoryProvider.setClient(buildMemoryClientFromConfig(vscode.workspace.getConfiguration('streamline')));
 
     // Register tree views
     vscode.window.registerTreeDataProvider('streamlineTopics', topicsProvider);
     vscode.window.registerTreeDataProvider('streamlineConsumerGroups', consumerGroupsProvider);
     vscode.window.registerTreeDataProvider('streamlineConnections', connectionsProvider);
     vscode.window.registerTreeDataProvider('streamlineSchemas', schemaProvider);
+    vscode.window.registerTreeDataProvider('streamlineBranches', branchesProvider);
+    vscode.window.registerTreeDataProvider('streamlineMemory', memoryProvider);
+
+    // Re-resolve the moonshot client when the relevant settings change.
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('streamline.moonshotUrl') || e.affectsConfiguration('streamline.moonshotToken')) {
+                branchesProvider.setClient(buildBranchesClientFromConfig(vscode.workspace.getConfiguration('streamline')));
+                memoryProvider.setClient(buildMemoryClientFromConfig(vscode.workspace.getConfiguration('streamline')));
+            }
+        }),
+        vscode.commands.registerCommand('streamline.refreshBranches', () => branchesProvider.refresh()),
+        vscode.commands.registerCommand('streamline.refreshMemory', () => memoryProvider.refresh()),
+        vscode.commands.registerCommand('streamline.searchTopic', async () => {
+            if (!client) {
+                vscode.window.showErrorMessage('Not connected to Streamline');
+                return;
+            }
+            const topics = await client.listTopics();
+            const topicNames = topics.map(t => t.name);
+            const topic = await vscode.window.showQuickPick(topicNames, {
+                placeHolder: 'Select a topic to search',
+            });
+            if (!topic) { return; }
+            const query = await vscode.window.showInputBox({
+                prompt: `Search messages in topic '${topic}'`,
+                placeHolder: 'Enter search query...',
+            });
+            if (!query) { return; }
+            try {
+                const messages = await client.consume(topic, { limit: 100 });
+                const filtered = messages.filter(m =>
+                    (m.value && m.value.includes(query)) ||
+                    (m.key && m.key.includes(query))
+                );
+                if (filtered.length === 0) {
+                    vscode.window.showInformationMessage(`No messages matching '${query}' in topic '${topic}'`);
+                    return;
+                }
+                const items = filtered.map(m => ({
+                    label: `P${m.partition} @ ${m.offset}`,
+                    description: m.key || '',
+                    detail: m.value.substring(0, 200),
+                }));
+                await vscode.window.showQuickPick(items, { placeHolder: `${filtered.length} results in ${topic}` });
+            } catch (error: any) {
+                vscode.window.showErrorMessage(`Search failed: ${error.message}`);
+            }
+        }),
+        vscode.commands.registerCommand('streamline.viewContract', async (item: TopicItem) => {
+            if (!item?.topicMeta?.contractName) {
+                vscode.window.showInformationMessage('No contract associated with this topic');
+                return;
+            }
+            const contractName = item.topicMeta.contractName;
+            const config = vscode.workspace.getConfiguration('streamline');
+            const moonshotUrl = config.get<string>('moonshotUrl');
+            if (!moonshotUrl) {
+                vscode.window.showErrorMessage('Moonshot URL not configured');
+                return;
+            }
+            try {
+                const headers: Record<string, string> = { Accept: 'application/json' };
+                const token = config.get<string>('moonshotToken');
+                if (token) { headers['Authorization'] = `Bearer ${token}`; }
+                const res = await fetch(
+                    `${moonshotUrl.replace(/\/+$/, '')}/api/v1/contracts/${encodeURIComponent(contractName)}`,
+                    { headers },
+                );
+                if (!res.ok) { throw new Error(`HTTP ${res.status}`); }
+                const contract = await res.json() as { name: string; schema: any; compatibility?: string };
+                const doc = await vscode.workspace.openTextDocument({
+                    content: JSON.stringify(contract, null, 2),
+                    language: 'json',
+                });
+                await vscode.window.showTextDocument(doc, { preview: true });
+            } catch (error: any) {
+                vscode.window.showErrorMessage(`Failed to fetch contract: ${error.message}`);
+            }
+        }),
+        vscode.commands.registerCommand('streamline.searchMemories', async (item?: MemoryItem) => {
+            const config = vscode.workspace.getConfiguration('streamline');
+            const moonshotUrl = config.get<string>('moonshotUrl');
+            if (!moonshotUrl) {
+                vscode.window.showErrorMessage('Moonshot URL not configured');
+                return;
+            }
+            let agentId = item?.agent?.agentId;
+            if (!agentId) {
+                agentId = await vscode.window.showInputBox({
+                    prompt: 'Enter agent ID to search memories for',
+                    placeHolder: 'agent-001',
+                });
+            }
+            if (!agentId) { return; }
+            const query = await vscode.window.showInputBox({
+                prompt: `Search memories for agent '${agentId}'`,
+                placeHolder: 'Enter search query...',
+            });
+            if (!query) { return; }
+            try {
+                const headers: Record<string, string> = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                };
+                const token = config.get<string>('moonshotToken');
+                if (token) { headers['Authorization'] = `Bearer ${token}`; }
+                const res = await fetch(
+                    `${moonshotUrl.replace(/\/+$/, '')}/api/v1/memories/${encodeURIComponent(agentId)}/search`,
+                    { method: 'POST', headers, body: JSON.stringify({ query }) },
+                );
+                if (!res.ok) { throw new Error(`HTTP ${res.status}`); }
+                const data = await res.json() as { results?: { tier: string; key: string; value: string; score: number }[] };
+                const results = data.results ?? [];
+                if (results.length === 0) {
+                    vscode.window.showInformationMessage(`No memories matching '${query}' for agent '${agentId}'`);
+                    return;
+                }
+                const items = results.map(r => ({
+                    label: `[${r.tier}] ${r.key}`,
+                    description: `score: ${r.score.toFixed(3)}`,
+                    detail: r.value.substring(0, 200),
+                }));
+                await vscode.window.showQuickPick(items, { placeHolder: `${results.length} memory results` });
+            } catch (error: any) {
+                vscode.window.showErrorMessage(`Memory search failed: ${error.message}`);
+            }
+        }),
+    );
 
     // Register commands
     context.subscriptions.push(

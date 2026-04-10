@@ -94,6 +94,12 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "streamline.refreshBranches",
+        "title": "Refresh Branches",
+        "category": "Streamline",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "streamline.registerSchema",
         "title": "Register Schema",
         "category": "Streamline",
@@ -142,6 +148,30 @@
         "title": "View Partition Hotspots",
         "category": "Streamline",
         "icon": "$(flame)"
+      },
+      {
+        "command": "streamline.searchTopic",
+        "title": "Search Topic",
+        "category": "Streamline",
+        "icon": "$(search)"
+      },
+      {
+        "command": "streamline.viewContract",
+        "title": "View Contract",
+        "category": "Streamline",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "streamline.refreshMemory",
+        "title": "Refresh Memory",
+        "category": "Streamline",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "streamline.searchMemories",
+        "title": "Search Memories",
+        "category": "Streamline",
+        "icon": "$(search)"
       }
     ],
     "viewsContainers": {
@@ -170,6 +200,14 @@
         {
           "id": "streamlineConnections",
           "name": "Connections"
+        },
+        {
+          "id": "streamlineBranches",
+          "name": "Moonshot Branches"
+        },
+        {
+          "id": "streamlineMemory",
+          "name": "Memory"
         }
       ]
     },
@@ -193,6 +231,26 @@
         {
           "command": "streamline.registerSchema",
           "when": "view == streamlineSchemas",
+          "group": "navigation"
+        },
+        {
+          "command": "streamline.refreshBranches",
+          "when": "view == streamlineBranches",
+          "group": "navigation"
+        },
+        {
+          "command": "streamline.refreshMemory",
+          "when": "view == streamlineMemory",
+          "group": "navigation"
+        },
+        {
+          "command": "streamline.searchMemories",
+          "when": "view == streamlineMemory",
+          "group": "navigation"
+        },
+        {
+          "command": "streamline.searchTopic",
+          "when": "view == streamlineTopics",
           "group": "navigation"
         }
       ],
@@ -224,6 +282,14 @@
         {
           "command": "streamline.deleteSubject",
           "when": "view == streamlineSchemas && viewItem == subject"
+        },
+        {
+          "command": "streamline.viewContract",
+          "when": "view == streamlineTopics && viewItem == topic"
+        },
+        {
+          "command": "streamline.searchMemories",
+          "when": "view == streamlineMemory && viewItem == memoryAgent"
         }
       ]
     },
@@ -351,6 +417,16 @@
           "default": null,
           "description": "JSON Schema to validate messages before producing. Set to null to disable validation.",
           "markdownDescription": "JSON Schema to validate messages before producing. Example:\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\"id\", \"event\"],\n  \"properties\": {\n    \"id\": { \"type\": \"string\" },\n    \"event\": { \"type\": \"string\" }\n  }\n}\n```"
+        },
+        "streamline.moonshotUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Streamline Moonshot HTTP API base URL (e.g. http://localhost:9094). Required for the Moonshot Branches view."
+        },
+        "streamline.moonshotToken": {
+          "type": "string",
+          "default": "",
+          "description": "Optional bearer token sent to the Moonshot HTTP API."
         }
       }
     },
