@@ -2,7 +2,7 @@
   "name": "streamline-vscode",
   "displayName": "Streamline for VS Code",
   "description": "Streamline streaming platform integration for VS Code - topic browser, message preview, and more",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "streamlinelabs",
   "icon": "images/icon.png",
   "engines": {
@@ -327,7 +327,11 @@
         "streamline.theme": {
           "type": "string",
           "default": "auto",
-          "enum": ["dark", "light", "auto"],
+          "enum": [
+            "dark",
+            "light",
+            "auto"
+          ],
           "enumDescriptions": [
             "Always use dark theme for message viewer",
             "Always use light theme for message viewer",
@@ -381,7 +385,10 @@
                 "default": false
               }
             },
-            "required": ["name", "host"]
+            "required": [
+              "name",
+              "host"
+            ]
           }
         },
         "streamline.defaultConnection": {
@@ -450,8 +457,14 @@
     "languages": [
       {
         "id": "streamql",
-        "aliases": ["StreamQL", "streamql"],
-        "extensions": [".sql.streamline", ".streamql"],
+        "aliases": [
+          "StreamQL",
+          "streamql"
+        ],
+        "extensions": [
+          ".sql.streamline",
+          ".streamql"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -490,4 +503,3 @@
     "axios": "^1.7.9"
   }
 }
-

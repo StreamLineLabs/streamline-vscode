@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.3.0] - 2026-04-20
+
 ### Added (Moonshot)
 - **Moonshot Branches** read-only tree view in the Streamline activity bar.
   Lists branches reported by the configured Moonshot HTTP API (M5 time-travel).
