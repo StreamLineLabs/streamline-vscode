@@ -483,7 +483,7 @@
     "eslint": "^8.55.0",
     "mocha": "^10.2.0",
     "sinon": "^17.0.1",
-    "typescript": "^5.3.0",
+    "typescript": "^6.0.3",
     "@vscode/vsce": "^2.22.0"
   },
   "dependencies": {
