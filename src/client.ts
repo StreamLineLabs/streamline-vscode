@@ -72,6 +72,24 @@ export class StreamlineClient {
     private port: number;
     private tls: boolean;
 
+    private static readonly TOPIC_NAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
+    private static readonly MAX_TOPIC_LENGTH = 249;
+
+    private validateTopicName(topic: string): void {
+        if (!topic || topic.length === 0) {
+            throw new Error('Topic name must not be empty');
+        }
+        if (topic === '.' || topic === '..') {
+            throw new Error(`Topic name must not be '${topic}'`);
+        }
+        if (topic.length > StreamlineClient.MAX_TOPIC_LENGTH) {
+            throw new Error(`Topic name exceeds maximum length of ${StreamlineClient.MAX_TOPIC_LENGTH} characters`);
+        }
+        if (!StreamlineClient.TOPIC_NAME_PATTERN.test(topic)) {
+            throw new Error(`Topic name '${topic}' contains invalid characters. Only alphanumeric, '.', '_', '-' allowed`);
+        }
+    }
+
     constructor(host: string, port: number, tls?: boolean, tlsConfig?: TlsConfig) {
         this.host = host;
         this.port = port;
@@ -146,6 +164,7 @@ export class StreamlineClient {
      * Create a new topic
      */
     async createTopic(name: string, partitions: number, replicationFactor: number = 1): Promise<void> {
+        this.validateTopicName(name);
         await this.client.post('/api/v1/topics', {
             name,
             partitions,
@@ -157,6 +176,7 @@ export class StreamlineClient {
      * Delete a topic
      */
     async deleteTopic(name: string): Promise<void> {
+        this.validateTopicName(name);
         await this.client.delete(`/api/v1/topics/${encodeURIComponent(name)}`);
     }
 
@@ -164,6 +184,7 @@ export class StreamlineClient {
      * Produce a message to a topic
      */
     async produce(topic: string, key: string | null, value: string, headers?: Record<string, string>): Promise<ProduceResult> {
+        this.validateTopicName(topic);
         const response = await this.client.post(`/api/v1/topics/${encodeURIComponent(topic)}/produce`, {
             key,
             value,
@@ -181,6 +202,7 @@ export class StreamlineClient {
         limit?: number;
         timeout?: number;
     } = {}): Promise<Message[]> {
+        this.validateTopicName(topic);
         const params = new URLSearchParams();
         if (options.partition !== undefined) {
             params.append('partition', options.partition.toString());

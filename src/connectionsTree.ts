@@ -107,8 +107,8 @@ export class ConnectionsTreeProvider implements vscode.TreeDataProvider<Connecti
         const connection: ConnectionConfig = {
             name,
             host,
-            port: parseInt(portStr || '9092'),
-            httpPort: parseInt(httpPortStr || '9094')
+            port: this.parsePort(portStr, 9092),
+            httpPort: this.parsePort(httpPortStr, 9094)
         };
 
         const config = vscode.workspace.getConfiguration('streamline');
@@ -126,6 +126,17 @@ export class ConnectionsTreeProvider implements vscode.TreeDataProvider<Connecti
         const updated = connections.filter(c => c.name !== item.connection.name);
         await config.update('connections', updated, vscode.ConfigurationTarget.Global);
         this.refresh();
+    }
+
+    private parsePort(input: string | undefined, defaultPort: number): number {
+        const parsed = parseInt(input || String(defaultPort), 10);
+        if (isNaN(parsed) || parsed < 1 || parsed > 65535) {
+            vscode.window.showWarningMessage(
+                `Invalid port "${input}", using default ${defaultPort}`
+            );
+            return defaultPort;
+        }
+        return parsed;
     }
 }
 
