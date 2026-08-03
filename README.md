@@ -25,7 +25,7 @@ Official VS Code extension for Streamline streaming platform.
 Or install from the command line:
 
 ```bash
-code --install-extension streamline.streamline-vscode
+code --install-extension streamlinelabs.streamline-vscode
 ```
 
 ## Quick Start

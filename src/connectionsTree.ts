@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 
-interface ConnectionConfig {
+export interface ConnectionConfig {
     name: string;
     host: string;
     port: number;
     httpPort: number;
+    tls?: boolean;
 }
 
 class ConnectionItem extends vscode.TreeItem {

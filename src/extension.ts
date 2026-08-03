@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { TopicsTreeProvider, TopicItem } from './topicsTree';
 import { ConsumerGroupsTreeProvider } from './consumerGroupsTree';
-import { ConnectionsTreeProvider } from './connectionsTree';
+import { ConnectionsTreeProvider, ConnectionConfig } from './connectionsTree';
 import { SchemaTreeProvider, SchemaTreeItem, SchemaViewerPanel } from './schemaTree';
 import { BranchesTreeProvider, buildBranchesClientFromConfig } from './branchesTree';
 import { MemoryTreeProvider, MemoryItem, buildMemoryClientFromConfig } from './memoryTree';
@@ -16,7 +16,12 @@ let lastConnectionHost: string | undefined;
 let lastConnectionPort: number | undefined;
 let lastConnectionTls: boolean | undefined;
 
-function getEffectiveMaxMessages(): number {
+/**
+ * Resolves the effective message viewer limit, preferring the current
+ * `streamline.maxMessages` setting over the deprecated
+ * `streamline.maxMessagesToShow` alias.
+ */
+export function getEffectiveMaxMessages(): number {
     const config = vscode.workspace.getConfiguration('streamline');
     return config.get<number>('maxMessages')
         ?? config.get<number>('maxMessagesToShow')
@@ -289,7 +294,7 @@ export function activate(context: vscode.ExtensionContext) {
             });
             if (!query) { return; }
             try {
-                const messages = await client.consume(topic, { limit: 100 });
+                const messages = await client.consume(topic, { limit: getEffectiveMaxMessages() });
                 const filtered = messages.filter(m =>
                     (m.value && m.value.includes(query)) ||
                     (m.key && m.key.includes(query))
@@ -393,8 +398,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('streamline.connect', async () => {
             const config = vscode.workspace.getConfiguration('streamline');
-            const connections = config.get<any[]>('connections') || [];
-            const defaultConnection = config.get<string>('defaultConnection');
+            const connections = config.get<ConnectionConfig[]>('connections') || [];
 
             let host = 'localhost';
             let port = 9094;
