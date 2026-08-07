@@ -18,5 +18,5 @@ jobs:
       - run: npm ci
       - run: npm run compile
       - run: npm run lint
-      - run: npm test
+      - run: xvfb-run -a npm test
         if: ${{ !cancelled() }}
