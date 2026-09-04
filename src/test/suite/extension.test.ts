@@ -70,6 +70,18 @@ suite('Extension Activation', () => {
     });
 
     suite('getEffectiveMaxMessages', () => {
+        async function clearMaxMessageSettings(): Promise<void> {
+            const config = vscode.workspace.getConfiguration('streamline');
+            for (const key of ['maxMessages', 'maxMessagesToShow']) {
+                if (config.inspect(key)?.globalValue !== undefined) {
+                    await config.update(key, undefined, vscode.ConfigurationTarget.Global);
+                }
+            }
+        }
+
+        setup(clearMaxMessageSettings);
+        teardown(clearMaxMessageSettings);
+
         test('falls back to default of 100 when unset', () => {
             assert.strictEqual(getEffectiveMaxMessages(), 100);
         });
@@ -78,13 +90,7 @@ suite('Extension Activation', () => {
             const config = vscode.workspace.getConfiguration('streamline');
             await config.update('maxMessages', 250, vscode.ConfigurationTarget.Global);
             await config.update('maxMessagesToShow', 50, vscode.ConfigurationTarget.Global);
-            try {
-                assert.strictEqual(getEffectiveMaxMessages(), 250);
-            } finally {
-                await config.update('maxMessages', undefined, vscode.ConfigurationTarget.Global);
-                await config.update('maxMessagesToShow', undefined, vscode.ConfigurationTarget.Global);
-            }
+            assert.strictEqual(getEffectiveMaxMessages(), 250);
         });
     });
 });
-

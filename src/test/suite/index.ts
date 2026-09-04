@@ -3,7 +3,12 @@ import * as fs from 'fs';
 import Mocha from 'mocha';
 
 export function run(): Promise<void> {
-    const mocha = new Mocha({ ui: 'tdd', color: true, timeout: 10000 });
+    // VS Code configuration writes can take longer than ten seconds on a cold
+    // extension host (especially while macOS resolves the test shell
+    // environment). Give cleanup hooks enough time to restore global settings;
+    // a timed-out teardown leaks values into later suites and creates false
+    // functional failures.
+    const mocha = new Mocha({ ui: 'tdd', color: true, timeout: 60000 });
     const testsRoot = path.resolve(__dirname, '.');
 
     return new Promise((resolve, reject) => {

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { StreamlineClient, SchemaInfo } from './client';
+import { escapeHtml, createNonce, cspMetaTag } from './html';
 
 export class SchemaTreeProvider implements vscode.TreeDataProvider<SchemaTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<SchemaTreeItem | undefined | null | void> =
@@ -186,13 +187,16 @@ export class SchemaViewerPanel {
             // Keep original if not valid JSON
         }
 
+        const nonce = createNonce();
+
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    ${cspMetaTag(nonce, this._panel.webview.cspSource)}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schema Viewer</title>
-    <style>
+    <style nonce="${nonce}">
         body {
             font-family: var(--vscode-font-family);
             padding: 20px;
@@ -279,19 +283,19 @@ export class SchemaViewerPanel {
         <div class="metadata">
             <div class="metadata-item">
                 <span class="metadata-label">Version:</span>
-                <span class="badge">${schema.version}</span>
+                <span class="badge">${escapeHtml(schema.version)}</span>
             </div>
             <div class="metadata-item">
                 <span class="metadata-label">Schema ID:</span>
-                <span class="metadata-value">${schema.id}</span>
+                <span class="metadata-value">${escapeHtml(schema.id)}</span>
             </div>
             <div class="metadata-item">
                 <span class="metadata-label">Type:</span>
-                <span class="badge">${schema.schemaType || 'AVRO'}</span>
+                <span class="badge">${escapeHtml(schema.schemaType || 'AVRO')}</span>
             </div>
             <div class="metadata-item">
                 <span class="metadata-label">Compatibility:</span>
-                <span class="badge">${compatibility}</span>
+                <span class="badge">${escapeHtml(compatibility)}</span>
             </div>
         </div>
     </div>
@@ -299,7 +303,7 @@ export class SchemaViewerPanel {
     <div class="versions">
         <div class="section-title">Available Versions</div>
         <div class="versions-list">
-            ${versions.map(v => `<span class="version-chip ${v === schema.version ? 'active' : ''}">v${v}</span>`).join('')}
+            ${versions.map(v => `<span class="version-chip ${v === schema.version ? 'active' : ''}">v${escapeHtml(v)}</span>`).join('')}
         </div>
     </div>
 
@@ -312,12 +316,14 @@ export class SchemaViewerPanel {
     }
 
     private _getErrorHtml(message: string): string {
+        const nonce = createNonce();
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    ${cspMetaTag(nonce, this._panel.webview.cspSource)}
     <title>Error</title>
-    <style>
+    <style nonce="${nonce}">
         body {
             font-family: var(--vscode-font-family);
             padding: 20px;
@@ -331,15 +337,4 @@ export class SchemaViewerPanel {
 </body>
 </html>`;
     }
-}
-
-function escapeHtml(text: string): string {
-    const map: Record<string, string> = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m]);
 }
