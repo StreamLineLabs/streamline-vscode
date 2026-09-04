@@ -2,7 +2,7 @@
   "name": "streamline-vscode",
   "displayName": "Streamline for VS Code",
   "description": "Streamline streaming platform integration for VS Code - topic browser, message preview, and more",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "streamlinelabs",
   "icon": "images/icon.png",
   "engines": {
