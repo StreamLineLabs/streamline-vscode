@@ -500,7 +500,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package"
+    "package": "vsce package",
+    "verify:package": "node scripts/package-contents.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",

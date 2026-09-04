@@ -1,18 +1,35 @@
-.vscode/**
-.vscode-test/**
+# Sources, build metadata and type declarations
 src/**
-.gitignore
-.editorconfig
-.github/**
-tsconfig.json
+out/test/**
 **/*.map
 **/*.ts
-!out/**/*.js
-node_modules/**
+tsconfig.json
+.eslintrc.json
+.editorconfig
+.gitignore
+.gitattributes
+.nvmrc
+package-lock.json
+
+# Contributor / CI / editor tooling
+.vscode/**
+.vscode-test/**
+.devcontainer/**
+.github/**
+CODEOWNERS
+.pre-commit-config.yaml
+Makefile
+scripts/**
+
+# Internal and contributor-only documentation
+AUDIT.md
+CLAUDE.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+
+# Build artifacts and OS noise
 coverage/**
 *.vsix
 .DS_Store
 Thumbs.db
-CONTRIBUTING.md
-SECURITY.md
-Makefile
