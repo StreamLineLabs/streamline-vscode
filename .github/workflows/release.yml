@@ -1,20 +1,84 @@
 name: Release
+
 on:
   push:
     tags: ['v*']
+
 permissions:
   contents: write
+
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+
       - run: npm ci
-      - run: npm run build --if-present
-      - run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
-      - uses: softprops/action-gh-release@v2
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test (headless)
+        run: xvfb-run -a npm test
+
+      - name: Verify tag matches package version
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag '${GITHUB_REF_NAME}' does not match package.json version '${version}'."
+            exit 1
+          fi
+          echo "vsix=streamline-vscode-${version}.vsix" >> "$GITHUB_ENV"
+
+      - name: Package VSIX
+        run: npx @vscode/vsce package --out "${{ env.vsix }}"
+
+      - name: Assert VSIX contents
+        run: node scripts/package-contents.js --vsix "${{ env.vsix }}"
+
+      - name: Ensure package version was not modified by the build
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet -- package.json; then
+            echo "::error::package.json changed during the release build; refusing to publish."
+            git --no-pager diff -- package.json
+            exit 1
+          fi
+          version="$(node -p "require('./package.json').version")"
+          [ "${GITHUB_REF_NAME#v}" = "$version" ]
+
+      - name: Attach VSIX to the GitHub release
+        uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          files: ${{ env.vsix }}
+
+      - name: Check Marketplace credentials
+        id: creds
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -n "${VSCE_PAT:-}" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VSCE_PAT is not configured; skipping Marketplace publish."
+          fi
+
+      # Publishes the already-verified VSIX (no re-package, no version bump)
+      # and only when a Marketplace token is explicitly present.
+      - name: Publish to the VS Code Marketplace
+        if: steps.creds.outputs.publish == 'true'
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx @vscode/vsce publish --packagePath "${{ env.vsix }}"

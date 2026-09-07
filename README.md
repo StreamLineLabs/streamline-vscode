@@ -25,14 +25,15 @@ Official VS Code extension for Streamline streaming platform.
 Or install from the command line:
 
 ```bash
-code --install-extension streamline.streamline-vscode
+code --install-extension streamlinelabs.streamline-vscode
 ```
 
 ## Quick Start
 
 1. Open the Streamline view in the Activity Bar
 2. Click "Connect to Server" or use `Ctrl+Shift+P` → "Streamline: Connect"
-3. Enter your server address (default: `localhost:9092`)
+3. Enter your server's HTTP API address (default: `localhost:9094`) — the
+   extension talks to Streamline over the HTTP API, not the Kafka protocol port
 4. Browse topics in the tree view
 
 ## Commands
@@ -54,6 +55,15 @@ code --install-extension streamline.streamline-vscode
 ## Configuration
 
 Configure in VS Code settings (`settings.json`):
+
+> The connection-endpoint settings — `streamline.serverAddress`,
+> `streamline.httpAddress`, `streamline.moonshotUrl`, `streamline.moonshotToken`,
+> `streamline.connections` and `streamline.defaultConnection` — are
+> **machine-scoped**: they can only be set in User (or Remote) settings, never by
+> a workspace or folder, so an untrusted repository cannot redirect
+> token-bearing requests. `streamline.moonshotToken` is additionally excluded
+> from Settings Sync. The extension is also disabled in Restricted Mode; trust
+> the workspace to use it.
 
 ```json
 {
@@ -199,6 +209,24 @@ Apache 2.0
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `streamline.brokers` | Broker addresses | `localhost:9092` |
-| `streamline.autoRefresh` | Auto-refresh interval (ms) | `5000` |
-| `streamline.maxMessages` | Max messages to display | `100` |
+| `streamline.serverAddress` | Kafka protocol address (`host:port`) | `localhost:9092` |
+| `streamline.httpAddress` | HTTP API address used by the extension (`host:port`) | `localhost:9094` |
+| `streamline.autoRefresh` | Enable timed tree refresh | `true` |
+| `streamline.refreshInterval` | Auto-refresh interval (ms) | `5000` |
+| `streamline.maxMessages` | Messages fetched per viewer page (and the Load More threshold) | `100` |
+| `streamline.moonshotUrl` | Moonshot HTTP API base URL | `""` |
+
+### HTTP API endpoints used
+
+The extension calls the Streamline HTTP API on `streamline.httpAddress`
+(default port `9094`):
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /health` | Connection health check |
+| `GET /api/v1/info` | Server version and uptime |
+| `GET /api/v1/topics` | List/describe topics |
+| `GET /api/v1/topics/{topic}/consume` | Read messages |
+| `POST /api/v1/topics/{topic}/produce` | Produce a message |
+| `GET /api/v1/groups` | Consumer groups and lag |
+| `GET /subjects`, `GET /config` | Schema Registry subjects and compatibility |

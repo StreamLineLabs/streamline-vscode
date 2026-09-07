@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { TopicsTreeProvider, TopicItem } from '../../topicsTree';
+import { TopicsTreeProvider, TopicItem, formatOffset } from '../../topicsTree';
 import { ConsumerGroupsTreeProvider } from '../../consumerGroupsTree';
 import { SchemaTreeProvider } from '../../schemaTree';
 import { ConnectionsTreeProvider } from '../../connectionsTree';
@@ -68,6 +68,41 @@ suite('Tree View Providers', () => {
             );
 
             assert.strictEqual(item.description, '1 partition');
+        });
+
+        test('should format partition offsets in description', () => {
+            const topicInfo = { name: 'test-topic', partitions: 1, replicationFactor: 1 };
+            const partitionInfo = {
+                partition: 0,
+                leader: 1,
+                replicas: [1],
+                isr: [1],
+                beginningOffset: -2,
+                endOffset: 1234567,
+            };
+            const item = new TopicItem(
+                'Partition 0',
+                vscode.TreeItemCollapsibleState.None,
+                topicInfo,
+                partitionInfo
+            );
+
+            assert.strictEqual(item.description, 'offsets: earliest-1,234,567');
+        });
+    });
+
+    suite('formatOffset', () => {
+        test('formats -1 as latest', () => {
+            assert.strictEqual(formatOffset(-1), 'latest');
+        });
+
+        test('formats -2 as earliest', () => {
+            assert.strictEqual(formatOffset(-2), 'earliest');
+        });
+
+        test('formats regular offsets with grouping separators', () => {
+            assert.strictEqual(formatOffset(1234567), '1,234,567');
+            assert.strictEqual(formatOffset(0), '0');
         });
     });
 

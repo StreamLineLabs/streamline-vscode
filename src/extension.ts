@@ -1,12 +1,14 @@
 import * as vscode from 'vscode';
 import { TopicsTreeProvider, TopicItem } from './topicsTree';
 import { ConsumerGroupsTreeProvider } from './consumerGroupsTree';
-import { ConnectionsTreeProvider } from './connectionsTree';
+import { ConnectionsTreeProvider, ConnectionConfig } from './connectionsTree';
 import { SchemaTreeProvider, SchemaTreeItem, SchemaViewerPanel } from './schemaTree';
 import { BranchesTreeProvider, buildBranchesClientFromConfig } from './branchesTree';
 import { MemoryTreeProvider, MemoryItem, buildMemoryClientFromConfig } from './memoryTree';
-import { StreamlineClient } from './client';
+import { StreamlineClient, ConsumerGroupMember } from './client';
 import { MessageViewerPanel } from './messageViewer';
+import { escapeHtml, renderBarCell, renderStyledDocument } from './html';
+import { getEffectiveMaxMessages, getEffectiveRefreshInterval } from './config';
 
 let client: StreamlineClient | undefined;
 let statusBarItem: vscode.StatusBarItem;
@@ -16,18 +18,40 @@ let lastConnectionHost: string | undefined;
 let lastConnectionPort: number | undefined;
 let lastConnectionTls: boolean | undefined;
 
-function getEffectiveMaxMessages(): number {
-    const config = vscode.workspace.getConfiguration('streamline');
-    return config.get<number>('maxMessages')
-        ?? config.get<number>('maxMessagesToShow')
-        ?? 100;
+/**
+ * Whether the current workspace is trusted.
+ *
+ * `capabilities.untrustedWorkspaces.supported` is `false` in package.json, so
+ * VS Code already keeps this extension disabled in Restricted Mode. This is a
+ * defence-in-depth guard: no client is constructed and no request carrying the
+ * configured bearer token is issued unless the workspace is explicitly trusted.
+ */
+export function isWorkspaceTrusted(): boolean {
+    return vscode.workspace.isTrusted !== false;
 }
 
-function getEffectiveRefreshInterval(): number {
-    const config = vscode.workspace.getConfiguration('streamline');
-    return config.get<number>('refreshInterval')
-        ?? config.get<number>('autoRefreshInterval')
-        ?? 5000;
+/**
+ * Effective-setting helpers live in `./config` so the message viewer can share
+ * them without importing this module (which would create a cycle). They are
+ * re-exported here because they are part of the extension's tested surface.
+ */
+export { getEffectiveMaxMessages, getEffectiveRefreshInterval } from './config';
+
+/**
+ * Human-readable summary of a consumer group's members, used as the `title`
+ * tooltip of the member-count cell.
+ *
+ * Returns **raw** (unescaped) text: escaping happens exactly once, at the HTML
+ * attribute sink. Escaping here as well would render `&amp;lt;` style
+ * double-encoded entities in the tooltip.
+ */
+export function buildConsumerGroupMembersTooltip(
+    members: ConsumerGroupMember[] | undefined
+): string {
+    if (!members || members.length === 0) {
+        return 'None';
+    }
+    return members.map(m => `${m.clientId} (${m.host})`).join(', ');
 }
 
 function validateJsonSchema(value: string, schema: any): string[] {
@@ -133,15 +157,6 @@ async function attemptReconnect(
     }, interval);
 }
 
-function escapeHtml(text: string): string {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
 function createStyledWebviewPanel(
     viewType: string,
     title: string,
@@ -153,83 +168,7 @@ function createStyledWebviewPanel(
         vscode.ViewColumn.One,
         { enableScripts: false }
     );
-    panel.webview.html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${escapeHtml(title)}</title>
-    <style>
-        body {
-            font-family: var(--vscode-font-family);
-            font-size: var(--vscode-font-size);
-            color: var(--vscode-foreground);
-            background-color: var(--vscode-editor-background);
-            padding: 16px;
-            margin: 0;
-        }
-        h1 { font-size: 1.4em; margin-bottom: 16px; }
-        h2 { font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; color: var(--vscode-descriptionForeground); }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 16px;
-        }
-        th, td {
-            text-align: left;
-            padding: 8px 12px;
-            border: 1px solid var(--vscode-panel-border);
-        }
-        th {
-            background: var(--vscode-editor-inactiveSelectionBackground);
-            font-weight: bold;
-        }
-        tr:hover td { background: var(--vscode-list-hoverBackground); }
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.85em;
-        }
-        .badge-stable { background: #2ea04370; color: #3fb950; }
-        .badge-warn { background: #d2992270; color: #e3b341; }
-        .badge-error { background: #f8514970; color: #f85149; }
-        .info-grid {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 6px 16px;
-            margin-bottom: 16px;
-        }
-        .info-label { color: var(--vscode-descriptionForeground); }
-        .empty { text-align: center; padding: 40px; color: var(--vscode-descriptionForeground); }
-        .code {
-            font-family: var(--vscode-editor-font-family);
-            background: var(--vscode-textCodeBlock-background);
-            padding: 8px;
-            border-radius: 2px;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .bar-container {
-            background: var(--vscode-editor-inactiveSelectionBackground);
-            border-radius: 2px;
-            overflow: hidden;
-            height: 16px;
-            min-width: 100px;
-        }
-        .bar-fill {
-            height: 100%;
-            border-radius: 2px;
-        }
-        .bar-hot { background: #f85149; }
-        .bar-warm { background: #e3b341; }
-        .bar-normal { background: #3fb950; }
-    </style>
-</head>
-<body>
-${bodyContent}
-</body>
-</html>`;
+    panel.webview.html = renderStyledDocument(title, bodyContent, panel.webview.cspSource);
     return panel;
 }
 
@@ -250,9 +189,17 @@ export function activate(context: vscode.ExtensionContext) {
     const connectionsProvider = new ConnectionsTreeProvider();
     const schemaProvider = new SchemaTreeProvider();
     const branchesProvider = new BranchesTreeProvider();
-    branchesProvider.setClient(buildBranchesClientFromConfig(vscode.workspace.getConfiguration('streamline')));
     const memoryProvider = new MemoryTreeProvider();
-    memoryProvider.setClient(buildMemoryClientFromConfig(vscode.workspace.getConfiguration('streamline')));
+
+    const trusted = isWorkspaceTrusted();
+    if (trusted) {
+        branchesProvider.setClient(buildBranchesClientFromConfig(vscode.workspace.getConfiguration('streamline')));
+        memoryProvider.setClient(buildMemoryClientFromConfig(vscode.workspace.getConfiguration('streamline')));
+    } else {
+        statusBarItem.text = '$(shield) Streamline: Restricted Mode';
+        statusBarItem.tooltip = 'Streamline is disabled because this workspace is not trusted';
+        console.warn('Streamline: workspace is not trusted; running without server connections.');
+    }
 
     // Register tree views
     vscode.window.registerTreeDataProvider('streamlineTopics', topicsProvider);
@@ -265,6 +212,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Re-resolve the moonshot client when the relevant settings change.
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
+            if (!isWorkspaceTrusted()) { return; }
             if (e.affectsConfiguration('streamline.moonshotUrl') || e.affectsConfiguration('streamline.moonshotToken')) {
                 branchesProvider.setClient(buildBranchesClientFromConfig(vscode.workspace.getConfiguration('streamline')));
                 memoryProvider.setClient(buildMemoryClientFromConfig(vscode.workspace.getConfiguration('streamline')));
@@ -289,7 +237,7 @@ export function activate(context: vscode.ExtensionContext) {
             });
             if (!query) { return; }
             try {
-                const messages = await client.consume(topic, { limit: 100 });
+                const messages = await client.consume(topic, { limit: getEffectiveMaxMessages() });
                 const filtered = messages.filter(m =>
                     (m.value && m.value.includes(query)) ||
                     (m.key && m.key.includes(query))
@@ -392,9 +340,14 @@ export function activate(context: vscode.ExtensionContext) {
     // Register commands
     context.subscriptions.push(
         vscode.commands.registerCommand('streamline.connect', async () => {
+            if (!isWorkspaceTrusted()) {
+                vscode.window.showErrorMessage(
+                    'Streamline is disabled in Restricted Mode. Trust this workspace to connect to a server.'
+                );
+                return;
+            }
             const config = vscode.workspace.getConfiguration('streamline');
-            const connections = config.get<any[]>('connections') || [];
-            const defaultConnection = config.get<string>('defaultConnection');
+            const connections = config.get<ConnectionConfig[]>('connections') || [];
 
             let host = 'localhost';
             let port = 9094;
@@ -745,16 +698,14 @@ export function activate(context: vscode.ExtensionContext) {
                     const stateClass = g.state === 'Stable' ? 'badge-stable'
                         : g.state === 'Empty' ? 'badge-warn' : 'badge-error';
                     const totalLag = d?.lag?.reduce((sum, l) => sum + l.lag, 0) ?? 'N/A';
-                    const memberDetails = d?.members?.map(m =>
-                        `${escapeHtml(m.clientId)} (${escapeHtml(m.host)})`
-                    ).join(', ') || 'None';
+                    const memberDetails = buildConsumerGroupMembersTooltip(d?.members);
 
                     tableRows += `<tr>
                         <td>${escapeHtml(g.groupId)}</td>
                         <td><span class="badge ${stateClass}">${escapeHtml(g.state)}</span></td>
                         <td>${escapeHtml(g.protocol || 'N/A')}</td>
-                        <td title="${escapeHtml(memberDetails)}">${g.members}</td>
-                        <td>${totalLag}</td>
+                        <td title="${escapeHtml(memberDetails)}">${escapeHtml(g.members)}</td>
+                        <td>${escapeHtml(totalLag)}</td>
                     </tr>`;
                 }
 
@@ -797,8 +748,8 @@ export function activate(context: vscode.ExtensionContext) {
                 for (const t of topics) {
                     topicRows += `<tr>
                         <td>${escapeHtml(t.name)}</td>
-                        <td>${t.partitions}</td>
-                        <td>${t.replicationFactor}</td>
+                        <td>${escapeHtml(t.partitions)}</td>
+                        <td>${escapeHtml(t.replicationFactor)}</td>
                     </tr>`;
                 }
 
@@ -817,9 +768,9 @@ export function activate(context: vscode.ExtensionContext) {
                     `<h1>Cluster Topology</h1>
                     <h2>Server Info</h2>
                     <div class="info-grid">
-                        <span class="info-label">Address:</span><span>${escapeHtml(connInfo.host)}:${connInfo.port}</span>
+                        <span class="info-label">Address:</span><span>${escapeHtml(connInfo.host)}:${escapeHtml(connInfo.port)}</span>
                         <span class="info-label">Version:</span><span>${escapeHtml(info.version)}</span>
-                        <span class="info-label">Uptime:</span><span>${uptimeStr}</span>
+                        <span class="info-label">Uptime:</span><span>${escapeHtml(uptimeStr)}</span>
                     </div>
                     <h2>Topics (${topics.length})</h2>
                     ${topicTable}`
@@ -903,9 +854,9 @@ export function activate(context: vscode.ExtensionContext) {
                     <h2>Metadata</h2>
                     <div class="info-grid">
                         <span class="info-label">Topic:</span><span>${escapeHtml(msg.topic)}</span>
-                        <span class="info-label">Partition:</span><span>${msg.partition}</span>
-                        <span class="info-label">Offset:</span><span>${msg.offset}</span>
-                        <span class="info-label">Timestamp:</span><span>${new Date(msg.timestamp).toISOString()}</span>
+                        <span class="info-label">Partition:</span><span>${escapeHtml(msg.partition)}</span>
+                        <span class="info-label">Offset:</span><span>${escapeHtml(msg.offset)}</span>
+                        <span class="info-label">Timestamp:</span><span>${escapeHtml(new Date(msg.timestamp).toISOString())}</span>
                         <span class="info-label">Key:</span><span>${msg.key ? escapeHtml(msg.key) : '<em>null</em>'}</span>
                     </div>
                     ${headersHtml}
@@ -953,8 +904,8 @@ export function activate(context: vscode.ExtensionContext) {
 
                     summaryRows += `<tr>
                         <td>${escapeHtml(g.groupId)}</td>
-                        <td><span class="badge ${lagClass}">${totalLag}</span></td>
-                        <td>${maxLag}</td>
+                        <td><span class="badge ${lagClass}">${escapeHtml(totalLag)}</span></td>
+                        <td>${escapeHtml(maxLag)}</td>
                         <td>${lagEntries.length}</td>
                     </tr>`;
 
@@ -965,9 +916,9 @@ export function activate(context: vscode.ExtensionContext) {
                                 : l.lag > maxLag * 0.8 ? 'bar-hot' : 'bar-warm';
                             return `<tr>
                                 <td>${escapeHtml(l.topic)}</td>
-                                <td>${l.partition}</td>
-                                <td>${l.lag}</td>
-                                <td><div class="bar-container"><div class="bar-fill ${barClass}" style="width: ${Math.max(pct, 2)}%"></div></div></td>
+                                <td>${escapeHtml(l.partition)}</td>
+                                <td>${escapeHtml(l.lag)}</td>
+                                ${renderBarCell(pct, barClass)}
                             </tr>`;
                         }).join('');
 
@@ -1042,12 +993,12 @@ export function activate(context: vscode.ExtensionContext) {
                             : p.size > avgSize * 1.1 ? 'bar-warm' : 'bar-normal';
 
                         return `<tr>
-                            <td>${p.id}</td>
-                            <td>${p.size.toLocaleString()}</td>
+                            <td>${escapeHtml(p.id)}</td>
+                            <td>${escapeHtml(p.size.toLocaleString())}</td>
                             <td>${deviation}%</td>
-                            <td>${p.leader}</td>
-                            <td>${p.isr.length}/${d!.partitions.length > 0 ? d!.partitions[0].replicas?.length ?? 1 : 1}</td>
-                            <td><div class="bar-container"><div class="bar-fill ${barClass}" style="width: ${Math.max(pct, 2)}%"></div></div></td>
+                            <td>${escapeHtml(p.leader)}</td>
+                            <td>${escapeHtml(p.isr.length)}/${escapeHtml(d!.partitions.length > 0 ? d!.partitions[0].replicas?.length ?? 1 : 1)}</td>
+                            ${renderBarCell(pct, barClass)}
                         </tr>`;
                     }).join('');
 

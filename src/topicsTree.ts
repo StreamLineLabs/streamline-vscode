@@ -39,9 +39,9 @@ export class TopicItem extends vscode.TreeItem {
         } else if (partition) {
             // Partition item
             this.contextValue = 'partition';
-            this.description = `offsets: ${partition.beginningOffset}-${partition.endOffset}`;
+            this.description = `offsets: ${formatOffset(partition.beginningOffset)}-${formatOffset(partition.endOffset)}`;
             this.iconPath = new vscode.ThemeIcon('file');
-            this.tooltip = `Partition: ${partition.partition}\nLeader: ${partition.leader}\nReplicas: ${partition.replicas.join(', ')}\nISR: ${partition.isr.join(', ')}\nBeginning Offset: ${partition.beginningOffset}\nEnd Offset: ${partition.endOffset}`;
+            this.tooltip = `Partition: ${partition.partition}\nLeader: ${partition.leader}\nReplicas: ${partition.replicas.join(', ')}\nISR: ${partition.isr.join(', ')}\nBeginning Offset: ${formatOffset(partition.beginningOffset)}\nEnd Offset: ${formatOffset(partition.endOffset)}`;
         }
     }
 }
@@ -164,7 +164,7 @@ export class TopicsTreeProvider implements vscode.TreeDataProvider<TopicItem> {
 /**
  * Formats a partition offset for display, handling special values.
  */
-function formatOffset(offset: number): string {
+export function formatOffset(offset: number): string {
     if (offset === -1) return 'latest';
     if (offset === -2) return 'earliest';
     return offset.toLocaleString();

@@ -2,7 +2,7 @@
   "name": "streamline-vscode",
   "displayName": "Streamline for VS Code",
   "description": "Streamline streaming platform integration for VS Code - topic browser, message preview, and more",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "streamlinelabs",
   "icon": "images/icon.png",
   "engines": {
@@ -43,6 +43,16 @@
     "onCommand:streamline.connect"
   ],
   "main": "./out/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Streamline reads connection endpoints, bearer tokens and TLS certificate paths from settings and opens network connections to them, so the extension is disabled in Restricted Mode. Trust the workspace to enable it."
+    },
+    "virtualWorkspaces": {
+      "supported": "limited",
+      "description": "Streamline needs local filesystem access to read TLS certificates; connections using TLS certificate paths are unavailable in virtual workspaces."
+    }
+  },
   "contributes": {
     "commands": [
       {
@@ -299,12 +309,14 @@
         "streamline.serverAddress": {
           "type": "string",
           "default": "localhost:9092",
-          "description": "Default Streamline Kafka protocol address (host:port)"
+          "scope": "machine",
+          "description": "Default Streamline Kafka protocol address (host:port). Machine-scoped: it cannot be overridden by workspace or folder settings."
         },
         "streamline.httpAddress": {
           "type": "string",
           "default": "localhost:9094",
-          "description": "Default Streamline HTTP API address (host:port)"
+          "scope": "machine",
+          "description": "Default Streamline HTTP API address (host:port). Machine-scoped: it cannot be overridden by workspace or folder settings."
         },
         "streamline.autoRefresh": {
           "type": "boolean",
@@ -342,7 +354,8 @@
         "streamline.connections": {
           "type": "array",
           "default": [],
-          "description": "Saved Streamline server connections (multiple profiles)",
+          "scope": "machine",
+          "description": "Saved Streamline server connections (multiple profiles). Machine-scoped: it cannot be overridden by workspace or folder settings.",
           "items": {
             "type": "object",
             "properties": {
@@ -394,7 +407,8 @@
         "streamline.defaultConnection": {
           "type": "string",
           "default": "",
-          "description": "Default connection profile name to use on startup"
+          "scope": "machine",
+          "description": "Default connection profile name to use on startup. Machine-scoped: it cannot be overridden by workspace or folder settings."
         },
         "streamline.autoReconnect": {
           "type": "boolean",
@@ -428,12 +442,15 @@
         "streamline.moonshotUrl": {
           "type": "string",
           "default": "",
-          "description": "Streamline Moonshot HTTP API base URL (e.g. http://localhost:9094). Required for the Moonshot Branches view."
+          "scope": "machine",
+          "description": "Streamline Moonshot HTTP API base URL (e.g. http://localhost:9094). Required for the Moonshot Branches view. Machine-scoped: it cannot be overridden by workspace or folder settings, so an untrusted repository cannot redirect token-bearing requests."
         },
         "streamline.moonshotToken": {
           "type": "string",
           "default": "",
-          "description": "Optional bearer token sent to the Moonshot HTTP API."
+          "scope": "machine",
+          "ignoreSync": true,
+          "description": "Optional bearer token sent to the Moonshot HTTP API. Machine-scoped and excluded from Settings Sync."
         }
       }
     },
@@ -483,7 +500,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package"
+    "package": "vsce package",
+    "verify:package": "node scripts/package-contents.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",

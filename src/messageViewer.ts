@@ -1,5 +1,12 @@
 import * as vscode from 'vscode';
 import { StreamlineClient, Message } from './client';
+import { escapeHtml, createNonce, cspMetaTag } from './html';
+import { getEffectiveMaxMessages, getEffectiveRefreshInterval } from './config';
+
+/** A full page means the server may have another page to fetch. */
+export function hasMoreMessages(receivedCount: number, pageSize: number): boolean {
+    return receivedCount >= pageSize;
+}
 
 export class MessageViewerPanel {
     public static currentPanel: MessageViewerPanel | undefined;
@@ -11,6 +18,7 @@ export class MessageViewerPanel {
     private readonly _topic: string;
     private _disposables: vscode.Disposable[] = [];
     private _messages: Message[] = [];
+    private _hasMoreMessages: boolean = false;
     private _autoRefresh: boolean = false;
     private _refreshInterval: NodeJS.Timeout | undefined;
 
@@ -86,13 +94,13 @@ export class MessageViewerPanel {
 
     private async _loadMessages() {
         try {
-            const config = vscode.workspace.getConfiguration('streamline');
-            const limit = config.get<number>('maxMessagesToShow') || 100;
+            const limit = getEffectiveMaxMessages();
 
             this._messages = await this._client.consume(this._topic, {
                 limit,
                 offset: 0
             });
+            this._hasMoreMessages = hasMoreMessages(this._messages.length, limit);
 
             this._updateContent();
         } catch (error: any) {
@@ -102,8 +110,7 @@ export class MessageViewerPanel {
 
     private async _loadMore(fromOffset: number) {
         try {
-            const config = vscode.workspace.getConfiguration('streamline');
-            const limit = config.get<number>('maxMessagesToShow') || 100;
+            const limit = getEffectiveMaxMessages();
 
             const moreMessages = await this._client.consume(this._topic, {
                 limit,
@@ -111,6 +118,7 @@ export class MessageViewerPanel {
             });
 
             this._messages = [...this._messages, ...moreMessages];
+            this._hasMoreMessages = hasMoreMessages(moreMessages.length, limit);
             this._updateContent();
         } catch (error: any) {
             vscode.window.showErrorMessage(`Failed to load more messages: ${error.message}`);
@@ -121,8 +129,7 @@ export class MessageViewerPanel {
         this._autoRefresh = !this._autoRefresh;
 
         if (this._autoRefresh) {
-            const config = vscode.workspace.getConfiguration('streamline');
-            const interval = config.get<number>('autoRefreshInterval') || 5000;
+            const interval = getEffectiveRefreshInterval();
 
             this._refreshInterval = setInterval(() => {
                 this._loadMessages();
@@ -147,7 +154,8 @@ export class MessageViewerPanel {
         this._panel.webview.postMessage({
             command: 'updateMessages',
             messages: filtered,
-            total: this._messages.length
+            total: this._messages.length,
+            hasMore: this._hasMoreMessages
         });
     }
 
@@ -160,18 +168,21 @@ export class MessageViewerPanel {
             command: 'updateMessages',
             messages: this._messages,
             total: this._messages.length,
+            hasMore: this._hasMoreMessages,
             autoRefresh: this._autoRefresh
         });
     }
 
     private _getHtmlForWebview(): string {
+        const nonce = createNonce();
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    ${cspMetaTag(nonce, this._panel.webview.cspSource)}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messages: ${this._topic}</title>
-    <style>
+    <title>Messages: ${escapeHtml(this._topic)}</title>
+    <style nonce="${nonce}">
         body {
             font-family: var(--vscode-font-family);
             font-size: var(--vscode-font-size);
@@ -266,6 +277,10 @@ export class MessageViewerPanel {
             text-align: center;
             margin-top: 15px;
         }
+        /* Toggled from script; inline style attributes are blocked by the CSP. */
+        .hidden {
+            display: none;
+        }
         .empty {
             text-align: center;
             padding: 40px;
@@ -281,11 +296,11 @@ export class MessageViewerPanel {
     </div>
     <div class="stats" id="stats">Loading messages...</div>
     <div class="message-list" id="messageList"></div>
-    <div class="load-more" id="loadMore" style="display: none;">
+    <div class="load-more hidden" id="loadMore">
         <button id="loadMoreBtn">Load More</button>
     </div>
 
-    <script>
+    <script nonce="${nonce}">
         const vscode = acquireVsCodeApi();
         let messages = [];
         let lastOffset = 0;
@@ -311,7 +326,7 @@ export class MessageViewerPanel {
             switch (message.command) {
                 case 'updateMessages':
                     messages = message.messages;
-                    renderMessages(messages, message.total);
+                    renderMessages(messages, message.total, Boolean(message.hasMore));
                     if (message.autoRefresh !== undefined) {
                         document.getElementById('autoRefreshBtn').textContent =
                             'Auto-Refresh: ' + (message.autoRefresh ? 'ON' : 'OFF');
@@ -320,7 +335,11 @@ export class MessageViewerPanel {
             }
         });
 
-        function renderMessages(msgs, total) {
+        function setLoadMoreVisible(visible) {
+            document.getElementById('loadMore').classList.toggle('hidden', !visible);
+        }
+
+        function renderMessages(msgs, total, hasMore) {
             const list = document.getElementById('messageList');
             const stats = document.getElementById('stats');
 
@@ -328,6 +347,7 @@ export class MessageViewerPanel {
 
             if (msgs.length === 0) {
                 list.innerHTML = '<div class="empty">No messages found</div>';
+                setLoadMoreVisible(false);
                 return;
             }
 
@@ -342,28 +362,34 @@ export class MessageViewerPanel {
 
                 return '<div class="message">' +
                     '<div class="message-header">' +
-                        '<span>Partition: ' + m.partition + ' | Offset: ' + m.offset + '</span>' +
-                        '<span>' + new Date(m.timestamp).toLocaleString() + '</span>' +
+                        '<span>Partition: ' + escapeHtml(m.partition) + ' | Offset: ' + escapeHtml(m.offset) + '</span>' +
+                        '<span>' + escapeHtml(new Date(m.timestamp).toLocaleString()) + '</span>' +
                     '</div>' +
                     (m.key ? '<div class="message-key">Key: ' + escapeHtml(m.key) + '</div>' : '') +
                     '<div class="message-value">' + escapeHtml(valueDisplay) + '</div>' +
                     '<div class="message-actions">' +
-                        '<button onclick="copyMessage(' + i + ')">Copy</button>' +
+                        '<button class="copy-btn" data-index="' + escapeHtml(i) + '">Copy</button>' +
                     '</div>' +
                 '</div>';
             }).join('');
 
-            document.getElementById('loadMore').style.display = msgs.length >= 100 ? 'block' : 'none';
+            list.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => copyMessage(Number(btn.dataset.index)));
+            });
+
+            setLoadMoreVisible(hasMore);
         }
 
         function copyMessage(index) {
             const msg = messages[index];
+            if (!msg) { return; }
             vscode.postMessage({ command: 'copyMessage', content: msg.value });
         }
 
+        // Escapes any server-provided value; input may be a number or object.
         function escapeHtml(text) {
             const div = document.createElement('div');
-            div.textContent = text;
+            div.textContent = text === null || text === undefined ? '' : String(text);
             return div.innerHTML;
         }
     </script>
@@ -388,4 +414,3 @@ export class MessageViewerPanel {
         }
     }
 }
-
